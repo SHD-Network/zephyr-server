@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [citext]
+}
+
+model User {
+  id                      String                    @id @default(uuid())
+  username                String                    @unique @db.Citext
+  name                    String?
+  email                   String                    @unique
+  role                    UserRole?                 @relation(fields: [roleId], references: [id])
+  roleId                  String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  credentials             Credential[]
+  password                Password?
+  session                 Session[]
+  publicKey               PublicKey?
+  sentMessages            Messages[]                @relation("sender")
+  receivedMessages        Messages[]                @relation("recipient")
+  groupChats              GroupChats?               @relation(fields: [groupChatsId], references: [id])
+  groupChatsId            String?
+  calendars               Calendar[]                @relation("UserCalendar")
+  calendarEvents          CalendarEvent[]
+  calendarUserPermissions CalendarUserPermissions[]
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  lastActive DateTime @updatedAt
+}
+
+model Password {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  password  String
+  salt      String
+  updatedAt DateTime @updatedAt
+}
+
+model Credential {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  name       String?
+  externalId String   @unique
+  publicKey  Bytes    @unique
+  signCount  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([externalId])
+}
+
+model PublicKey {
+  id       String @id @default(uuid())
+  user     User   @relation(fields: [userId], references: [id])
+  userId   String @unique
+  keyValue Bytes  @unique
+}
+
+model UserRole {
+  id          String            @id @default(uuid())
+  users       User[]
+  name        String            @unique
+  permissions RolePermissions[]
+}
+
+model RolePermissions {
+  id          String     @id @default(uuid())
+  node        String
+  description String
+  roles       UserRole[]
+}
+
+model Messages {
+  id           String      @id @default(uuid())
+  message      String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  sender       User        @relation("sender", fields: [senderId], references: [id])
+  senderId     String
+  recipient    User        @relation("recipient", fields: [recipientId], references: [id])
+  recipientId  String
+  read         Boolean     @default(false)
+  groupChat    GroupChats? @relation(fields: [groupChatsId], references: [id])
+  groupChatsId String?
+}
+
+model GroupChats {
+  id        String     @id @default(uuid())
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  members   User[]
+  messages  Messages[]
+}
+
+model Config {
+  id    String @id @default(uuid())
+  key   String @unique
+  value Json
+}
+
+model DefconLevels {
+  id            String          @id @default(uuid())
+  region        String          @unique
+  level         Int
+  DefconUpdates DefconUpdates[]
+}
+
+model DefconUpdates {
+  id       String       @id @default(uuid())
+  region   DefconLevels @relation(fields: [regionId], references: [id])
+  regionId String
+  date     DateTime
+  value    String       @unique
+}
+
+model Calendar {
+  id                      String                    @id @unique @default(uuid())
+  name                    String
+  owner                   User                      @relation(fields: [ownerId], references: [id], name: "UserCalendar")
+  ownerId                 String
+  events                  CalendarEvent[]
+  color                   String
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  calendarUserPermissions CalendarUserPermissions[]
+}
+
+model CalendarUserPermissions {
+  id         String   @id @default(uuid())
+  calendar   Calendar @relation(fields: [calendarId], references: [id])
+  calendarId String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  read       Boolean  @default(true)
+  write      Boolean  @default(false)
+}
+
+model CalendarEvent {
+  id          String    @id @default(uuid())
+  Calendar    Calendar  @relation(fields: [calendarId], references: [id])
+  calendarId  String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdById String
+  start       DateTime
+  end         DateTime?
+  allDay      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
