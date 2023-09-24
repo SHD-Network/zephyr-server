@@ -142,7 +142,7 @@ model Calendar {
 }
 
 model CalendarUserPermissions {
-  id         String   @id @default(uuid())
+  id         String   @id @unique @default(uuid())
   calendar   Calendar @relation(fields: [calendarId], references: [id])
   calendarId String
   user       User     @relation(fields: [userId], references: [id])
@@ -152,7 +152,7 @@ model CalendarUserPermissions {
 }
 
 model CalendarEvent {
-  id          String    @id @default(uuid())
+  id          String    @id @unique @default(uuid())
   Calendar    Calendar  @relation(fields: [calendarId], references: [id])
   calendarId  String
   createdBy   User      @relation(fields: [createdById], references: [id])
@@ -162,4 +162,13 @@ model CalendarEvent {
   allDay      Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+model Wiki {
+  id           String   @id @unique @default(uuid())
+  title        String
+  content      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  contributors String[]
 }

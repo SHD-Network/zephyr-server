@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { WikiService } from './wiki.service';
 import { CreateWikiDto } from './dto/create-wiki.dto';
 import { UpdateWikiDto } from './dto/update-wiki.dto';
